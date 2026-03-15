@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
 
 interface EvenementRow {
   id: string;
@@ -41,6 +42,8 @@ export default function EvenementsPage() {
 
   return (
     <div>
+      <OnboardingChecklist />
+
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Événements</h1>

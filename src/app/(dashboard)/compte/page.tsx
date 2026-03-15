@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { signOut } from "next-auth/react";
+import { Modal } from "@/components/ui";
 
 interface UserInfo {
   id: string;
@@ -30,6 +32,16 @@ export default function ComptePage() {
     newPassword: "",
     confirmPassword: "",
   });
+
+  // Export state
+  const [exporting, setExporting] = useState(false);
+
+  // Delete account state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     fetch("/api/compte")
@@ -104,6 +116,84 @@ export default function ComptePage() {
     } else {
       setMessage({ type: "error", text: data.error || "Erreur lors du changement." });
     }
+  }
+
+  async function handleExportData() {
+    setExporting(true);
+    try {
+      const res = await fetch("/api/compte/export");
+      if (!res.ok) {
+        setMessage({ type: "error", text: "Erreur lors de l'export des données." });
+        return;
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition");
+      const filenameMatch = disposition?.match(/filename="(.+)"/);
+      const filename = filenameMatch?.[1] ?? "ogong-donnees.json";
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setMessage({ type: "success", text: "Vos données ont été téléchargées." });
+    } catch {
+      setMessage({ type: "error", text: "Erreur lors de l'export des données." });
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleteError("");
+
+    if (deleteConfirmation !== "SUPPRIMER") {
+      setDeleteError("Veuillez taper SUPPRIMER pour confirmer.");
+      return;
+    }
+
+    if (!deletePassword) {
+      setDeleteError("Veuillez saisir votre mot de passe.");
+      return;
+    }
+
+    setDeleting(true);
+
+    try {
+      const res = await fetch("/api/compte", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          password: deletePassword,
+          confirmation: deleteConfirmation,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        await signOut({ callbackUrl: "/connexion" });
+      } else {
+        setDeleteError(data.error || "Erreur lors de la suppression.");
+        setDeleting(false);
+      }
+    } catch {
+      setDeleteError("Erreur lors de la suppression du compte.");
+      setDeleting(false);
+    }
+  }
+
+  function closeDeleteModal() {
+    if (deleting) return;
+    setShowDeleteModal(false);
+    setDeletePassword("");
+    setDeleteConfirmation("");
+    setDeleteError("");
   }
 
   if (loading) {
@@ -280,7 +370,118 @@ export default function ComptePage() {
             })}
           </p>
         </div>
+
+        {/* Mes données (RGPD) */}
+        <div className="bg-surface rounded-xl border border-border p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-2">Mes données</h2>
+          <p className="text-sm text-muted mb-4">
+            Conformément au RGPD, vous pouvez exporter l'ensemble de vos données personnelles.
+          </p>
+          <button
+            onClick={handleExportData}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 py-2.5 px-5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-surface-hover transition-colors disabled:opacity-50"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            {exporting ? "Export en cours…" : "Télécharger mes données"}
+          </button>
+        </div>
+
+        {/* Zone dangereuse */}
+        <div className="rounded-xl border-2 border-danger/30 bg-danger/5 p-6">
+          <div className="flex items-start gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-danger mt-0.5 shrink-0">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <div>
+              <h2 className="text-lg font-semibold text-danger mb-1">Zone dangereuse</h2>
+              <p className="text-sm text-muted mb-4">
+                La suppression de votre compte est irréversible. Toutes vos données seront définitivement supprimées.
+              </p>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="py-2.5 px-5 rounded-lg bg-danger hover:bg-danger/90 text-white text-sm font-medium transition-colors"
+              >
+                Supprimer mon compte
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Modal de confirmation de suppression */}
+      <Modal isOpen={showDeleteModal} onClose={closeDeleteModal} title="Supprimer votre compte">
+        <div className="space-y-4">
+          <div className="p-3 rounded-lg bg-danger/10 border border-danger/20">
+            <p className="text-sm text-danger font-medium">
+              Cette action est irréversible.
+            </p>
+            <p className="text-sm text-danger/80 mt-1">
+              Toutes vos données seront définitivement supprimées : événements, participants, collaborations, crédits et paiements.
+            </p>
+          </div>
+
+          {deleteError && (
+            <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 text-sm text-danger">
+              {deleteError}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Mot de passe
+            </label>
+            <input
+              type="password"
+              placeholder="Saisissez votre mot de passe"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              disabled={deleting}
+              className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-danger/30 focus:border-danger transition-colors disabled:opacity-50"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Tapez <span className="font-bold text-danger">SUPPRIMER</span> pour confirmer
+            </label>
+            <input
+              type="text"
+              placeholder="SUPPRIMER"
+              value={deleteConfirmation}
+              onChange={(e) => setDeleteConfirmation(e.target.value)}
+              disabled={deleting}
+              autoComplete="off"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-danger/30 focus:border-danger transition-colors disabled:opacity-50"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={closeDeleteModal}
+              disabled={deleting}
+              className="py-2.5 px-5 rounded-lg border border-border text-sm font-medium text-muted hover:bg-surface-hover transition-colors disabled:opacity-50"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteAccount}
+              disabled={deleting || deleteConfirmation !== "SUPPRIMER" || !deletePassword}
+              className="py-2.5 px-5 rounded-lg bg-danger hover:bg-danger/90 text-white text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              {deleting ? "Suppression…" : "Confirmer la suppression"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

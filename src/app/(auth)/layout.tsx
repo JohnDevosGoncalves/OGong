@@ -27,6 +27,9 @@ export default function AuthLayout({
       {/* Illustration */}
       <div className="hidden lg:flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 relative overflow-hidden">
         <div className="text-center px-12">
+          <div className="flex justify-center mb-6">
+            <Logo size={64} animate />
+          </div>
           <h2 className="text-4xl font-bold text-foreground mb-4">Ogong</h2>
           <p className="text-xl text-primary font-medium mb-2 italic">
             Générateur de rencontres

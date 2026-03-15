@@ -30,6 +30,7 @@ export const fr = {
     invitations: "Invitations",
     users: "Utilisateurs",
     createEvent: "Cr\u00e9er un \u00e9v\u00e9nement",
+    help: "Aide",
     skipToContent: "Aller au contenu",
     mainMenu: "Menu principal",
   },

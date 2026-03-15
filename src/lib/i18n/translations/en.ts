@@ -32,6 +32,7 @@ export const en: Translations = {
     invitations: "Invitations",
     users: "Users",
     createEvent: "Create an event",
+    help: "Help",
     skipToContent: "Skip to content",
     mainMenu: "Main menu",
   },

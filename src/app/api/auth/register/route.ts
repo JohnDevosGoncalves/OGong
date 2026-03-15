@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sanitize, sanitizeEmail } from "@/lib/api-utils";
 import { registerSchema } from "@/lib/validations";
+import { WELCOME_CREDITS } from "@/lib/stripe";
+import { sendEmailVerification } from "@/lib/email";
+
+const VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
 
 export async function POST(request: Request) {
   try {
@@ -36,19 +41,56 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const user = await prisma.user.create({
+    // Créer l'utilisateur et les crédits de bienvenue en une transaction
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          nom: sanitizedNom,
+          prenom: sanitizedPrenom,
+          email: sanitizedEmail,
+          telephone: sanitizedTelephone,
+          hashedPassword,
+          role: "admin",
+        },
+      });
+
+      await tx.credit.create({
+        data: {
+          userId: newUser.id,
+          montant: WELCOME_CREDITS,
+          type: "bonus",
+          detail: "Crédits de bienvenue",
+        },
+      });
+
+      return newUser;
+    });
+
+    // Générer et stocker le token de vérification d'email
+    const verificationToken = crypto.randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + VERIFICATION_TOKEN_EXPIRY_HOURS);
+
+    await prisma.emailVerificationToken.create({
       data: {
-        nom: sanitizedNom,
-        prenom: sanitizedPrenom,
+        token: verificationToken,
         email: sanitizedEmail,
-        telephone: sanitizedTelephone,
-        hashedPassword,
-        role: "admin",
+        expiresAt,
       },
     });
 
+    // Envoyer l'email de vérification (ne bloque pas l'inscription)
+    try {
+      await sendEmailVerification(sanitizedEmail, sanitizedPrenom, verificationToken);
+    } catch (emailError) {
+      console.error("Erreur envoi email de vérification:", emailError);
+    }
+
     return NextResponse.json(
-      { message: "Compte créé avec succès.", userId: user.id },
+      {
+        message: "Compte créé avec succès. Vérifiez votre boîte mail pour activer votre compte.",
+        userId: user.id,
+      },
       { status: 201 }
     );
   } catch (error) {

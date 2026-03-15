@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { Tooltip } from "@/components/ui";
 
 const formats = [
   {
     id: "speed_meeting",
     label: "Speed meeting",
     description: "Rencontres 1 à 1, tours minutés",
+    detail:
+      "Chaque participant rencontre un maximum de personnes en tête-à-tête. Notre algorithme garantit zéro doublon — personne ne se rencontre deux fois. Idéal pour : networking, afterworks, événements professionnels.",
     icon: "1to1",
     color: "border-primary/30 bg-primary/5",
     activeColor: "border-primary bg-primary/10 ring-2 ring-primary/20",
@@ -15,6 +18,8 @@ const formats = [
     id: "team",
     label: "Team",
     description: "Sessions en équipe, tailles XS à XL",
+    detail:
+      "Les participants sont répartis en équipes équilibrées qui se rencontrent tour à tour. Parfait pour : séminaires, activités de cohésion, ateliers collaboratifs.",
     icon: "team",
     color: "border-accent/30 bg-accent/5",
     activeColor: "border-accent bg-accent/10 ring-2 ring-accent/20",
@@ -23,6 +28,8 @@ const formats = [
     id: "job_dating",
     label: "Job dating",
     description: "Rencontres avec exposants et créneaux",
+    detail:
+      "Les candidats visitent des stands d'entreprises sur des créneaux horaires. Gestion des capacités et des conflits automatique. Idéal pour : forums emploi, salons de recrutement, portes ouvertes.",
     icon: "expo",
     color: "border-success/30 bg-success/5",
     activeColor: "border-success bg-success/10 ring-2 ring-success/20",
@@ -226,8 +233,20 @@ export default function EvenementForm({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
+                <label className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
                   Temps de parole / tour
+                  <Tooltip
+                    content="Durée de chaque rencontre. Recommandé : 3-5 min pour speed meeting, 10-15 min pour team building."
+                    position="top"
+                  >
+                    <span
+                      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted/20 text-muted text-[10px] font-bold cursor-help"
+                      aria-label="Aide sur le temps de parole"
+                      tabIndex={0}
+                    >
+                      i
+                    </span>
+                  </Tooltip>
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -251,8 +270,20 @@ export default function EvenementForm({
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
+                <label className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
                   Temps de pause / tour
+                  <Tooltip
+                    content="Temps pour changer de place. Recommandé : 30 secondes à 2 minutes."
+                    position="top"
+                  >
+                    <span
+                      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted/20 text-muted text-[10px] font-bold cursor-help"
+                      aria-label="Aide sur le temps de pause"
+                      tabIndex={0}
+                    >
+                      i
+                    </span>
+                  </Tooltip>
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -327,31 +358,49 @@ export default function EvenementForm({
           </p>
 
           <div className="space-y-3">
-            {formats.map((format) => (
-              <button
-                key={format.id}
-                type="button"
-                disabled={formatDisabled}
-                onClick={() => setSelectedFormat(format.id)}
-                className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-                  formatDisabled ? "opacity-60 cursor-not-allowed" : "hover:shadow-sm"
-                } ${
-                  selectedFormat === format.id ? format.activeColor : format.color
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-surface text-sm font-bold text-primary">
-                    {format.icon}
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">
-                      {format.label}
+            {formats.map((format) => {
+              const isSelected = selectedFormat === format.id;
+              return (
+                <div key={format.id}>
+                  <button
+                    type="button"
+                    disabled={formatDisabled}
+                    onClick={() => setSelectedFormat(format.id)}
+                    className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
+                      formatDisabled ? "opacity-60 cursor-not-allowed" : "hover:shadow-sm"
+                    } ${isSelected ? format.activeColor : format.color}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-surface text-sm font-bold text-primary">
+                        {format.icon}
+                      </span>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-foreground">
+                            {format.label}
+                          </p>
+                          <Tooltip content={format.detail} position="top">
+                            <span
+                              className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted/20 text-muted text-[10px] font-bold cursor-help"
+                              aria-label={`Informations sur ${format.label}`}
+                              tabIndex={0}
+                            >
+                              i
+                            </span>
+                          </Tooltip>
+                        </div>
+                        <p className="text-xs text-muted">{format.description}</p>
+                      </div>
+                    </div>
+                  </button>
+                  {isSelected && (
+                    <p className="mt-2 mx-1 text-xs text-muted leading-relaxed">
+                      {format.detail}
                     </p>
-                    <p className="text-xs text-muted">{format.description}</p>
-                  </div>
+                  )}
                 </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
 
           <div className={`mt-8 pt-6 border-t border-border ${isEdit ? "flex gap-3" : ""}`}>

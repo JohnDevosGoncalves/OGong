@@ -74,6 +74,50 @@ function emailLayout(bodyContent: string): string {
   `.trim();
 }
 
+// ─── Vérification d'email ────────────────────────────────────
+
+export async function sendEmailVerification(
+  email: string,
+  prenom: string,
+  token: string
+) {
+  const verifyLink = `${APP_URL}/verifier-email?token=${token}`;
+
+  const body = `
+    <h2 style="margin:0 0 16px;color:#18181b;font-size:20px;font-weight:600;">
+      Bienvenue sur OGong !
+    </h2>
+    <p style="margin:0 0 16px;color:#52525b;font-size:14px;line-height:1.6;">
+      Bonjour <strong>${prenom}</strong>, merci de vous &ecirc;tre inscrit(e) sur OGong.
+      Confirmez votre adresse email pour activer votre compte.
+    </p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td align="center" style="padding:8px 0 24px;">
+          <a href="${verifyLink}" style="display:inline-block;padding:12px 32px;background-color:#6366f1;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;border-radius:8px;">
+            Confirmer mon email
+          </a>
+        </td>
+      </tr>
+    </table>
+    <p style="margin:0 0 8px;color:#71717a;font-size:13px;line-height:1.5;">
+      Ce lien expire dans <strong>24 heures</strong>.
+    </p>
+    <p style="margin:0;color:#71717a;font-size:13px;line-height:1.5;">
+      Si vous n'avez pas cr&eacute;&eacute; de compte, vous pouvez ignorer cet email en toute s&eacute;curit&eacute;.
+    </p>
+  `;
+
+  await getResend().emails.send({
+    from: "OGong <noreply@ogong.fr>",
+    to: email,
+    subject: "Confirmez votre email — OGong",
+    html: emailLayout(body),
+  });
+}
+
+// ─── Réinitialisation de mot de passe ────────────────────────
+
 export async function sendPasswordResetEmail(email: string, token: string) {
   const resetLink = `${APP_URL}/reinitialiser-mot-de-passe?token=${token}`;
 

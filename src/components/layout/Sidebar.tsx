@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import Logo from "./Logo";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import type { Translations } from "@/lib/i18n";
 import type { ReactNode } from "react";
 
-type NavKey = "events" | "statistics" | "credits" | "users" | "account";
+type NavKey = "events" | "statistics" | "credits" | "users" | "account" | "help";
 
 interface NavItem {
   key: NavKey;
@@ -70,6 +71,7 @@ function getNavLabel(key: NavKey, t: Translations): string {
     credits: t.nav.credits,
     users: t.nav.users,
     account: t.nav.account,
+    help: t.nav.help,
   };
   return labels[key];
 }
@@ -77,6 +79,12 @@ function getNavLabel(key: NavKey, t: Translations): string {
 export default function Sidebar() {
   const pathname = usePathname();
   const { t } = useLocale();
+  const [animateLogo, setAnimateLogo] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimateLogo(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-64 bg-sidebar flex flex-col z-40">
@@ -90,7 +98,7 @@ export default function Sidebar() {
 
       {/* Logo */}
       <div className="px-6 py-6 flex items-center gap-3">
-        <Logo size={44} />
+        <Logo size={44} animate={animateLogo} />
         <span className="text-white text-xl font-bold tracking-tight">
           ogong
         </span>
@@ -129,6 +137,23 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Aide link */}
+      <div className="px-3 mb-2">
+        <Link
+          href="/aide"
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            pathname.startsWith("/aide")
+              ? "bg-sidebar-active text-white"
+              : "text-white/70 hover:bg-sidebar-hover hover:text-white"
+          }`}
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+          </svg>
+          {getNavLabel("help", t)}
+        </Link>
+      </div>
 
       {/* Footer */}
       <div className="px-4 py-4 border-t border-white/10">

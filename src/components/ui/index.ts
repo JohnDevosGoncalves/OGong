@@ -21,3 +21,9 @@ export { ThemeToggle } from "./ThemeToggle";
 export { InstallPrompt } from "./InstallPrompt";
 
 export { LanguageSwitcher } from "./LanguageSwitcher";
+
+export { Tooltip } from "./Tooltip";
+export type { TooltipProps } from "./Tooltip";
+
+export { Accordion } from "./Accordion";
+export type { AccordionProps, AccordionItem } from "./Accordion";

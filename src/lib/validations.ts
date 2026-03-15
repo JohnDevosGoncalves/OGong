@@ -107,6 +107,25 @@ export const sendNotificationSchema = z.object({
   }),
 });
 
+// ─── Vérification d'email ───────────────────────────────────
+
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1, "Jeton de vérification requis"),
+});
+
+export const resendVerificationSchema = z.object({
+  email: z.string().email("Adresse email invalide").max(254),
+});
+
+// ─── Suppression de compte ──────────────────────────────────
+
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, "Mot de passe requis"),
+  confirmation: z.literal("SUPPRIMER", {
+    error: "Veuillez taper SUPPRIMER pour confirmer",
+  }),
+});
+
 // ─── Crédits ────────────────────────────────────────────────
 
 export const buyCreditsSchema = z.object({

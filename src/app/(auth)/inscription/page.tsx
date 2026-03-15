@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function InscriptionPage() {
-  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -45,29 +43,55 @@ export default function InscriptionPage() {
 
     const data = await res.json();
 
-    if (!res.ok) {
-      setError(data.error);
-      setLoading(false);
-      return;
-    }
-
-    // Connexion automatique après inscription
-    const result = await signIn("credentials", {
-      email: formData.get("email"),
-      password,
-      redirect: false,
-    });
-
     setLoading(false);
 
-    if (result?.error) {
-      // Compte créé mais échec login — rediriger vers connexion
-      router.push("/connexion");
+    if (!res.ok) {
+      setError(data.error);
       return;
     }
 
-    router.push("/evenements");
-    router.refresh();
+    setSuccess(true);
+  }
+
+  if (success) {
+    return (
+      <div className="max-w-sm w-full text-center">
+        <div className="mx-auto mb-6 w-16 h-16 rounded-full bg-success/10 flex items-center justify-center">
+          <svg
+            className="w-8 h-8 text-success"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
+            />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold text-foreground mb-2">
+          Vérifiez votre boîte mail
+        </h1>
+        <p className="text-muted text-sm mb-4">
+          Un email de confirmation a été envoyé à votre adresse.
+          Cliquez sur le lien pour activer votre compte.
+        </p>
+        <div className="p-3 rounded-lg bg-primary/10 text-primary text-sm font-medium mb-6">
+          Vous avez reçu 5 crédits de bienvenue !
+        </div>
+        <p className="text-xs text-muted mb-4">
+          Vous ne trouvez pas l'email ? Pensez à vérifier vos spams.
+        </p>
+        <Link
+          href="/connexion"
+          className="text-sm text-primary font-medium hover:text-primary-hover transition-colors"
+        >
+          Aller à la page de connexion
+        </Link>
+      </div>
+    );
   }
 
   return (

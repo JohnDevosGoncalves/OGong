@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { getAuthSession, sanitize, sanitizeEmail } from "@/lib/api-utils";
-import { updateAccountSchema, changePasswordSchema } from "@/lib/validations";
+import { updateAccountSchema, changePasswordSchema, deleteAccountSchema } from "@/lib/validations";
 
 // GET /api/compte — récupérer les infos du compte
 export async function GET() {
@@ -116,4 +116,60 @@ export async function PUT(request: Request) {
   });
 
   return NextResponse.json({ success: true });
+}
+
+// DELETE /api/compte — supprimer le compte et toutes les données
+export async function DELETE(request: Request) {
+  const { userId, error } = await getAuthSession();
+  if (error) return error;
+
+  const body = await request.json();
+
+  const parsed = deleteAccountSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0].message },
+      { status: 400 }
+    );
+  }
+
+  const { password } = parsed.data;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
+  }
+
+  const isValid = await bcrypt.compare(password, user.hashedPassword);
+  if (!isValid) {
+    return NextResponse.json({ error: "Mot de passe incorrect." }, { status: 403 });
+  }
+
+  // Supprimer toutes les données dans une transaction
+  await prisma.$transaction(async (tx) => {
+    // Supprimer les collaborations (en tant qu'utilisateur et inviteur)
+    await tx.collaborateur.deleteMany({ where: { userId } });
+    await tx.collaborateur.deleteMany({ where: { invitePar: userId } });
+
+    // Supprimer tous les événements créés (cascade : participants, tours, tables, affectations, exposants, créneaux)
+    await tx.evenement.deleteMany({ where: { createurId: userId } });
+
+    // Supprimer les crédits et paiements
+    await tx.credit.deleteMany({ where: { userId } });
+    await tx.paiement.deleteMany({ where: { userId } });
+
+    // Supprimer les jetons de réinitialisation de mot de passe
+    await tx.passwordResetToken.deleteMany({ where: { email: user.email } });
+
+    // Supprimer le compte utilisateur (cascade : sessions, accounts)
+    await tx.user.delete({ where: { id: userId } });
+  });
+
+  return NextResponse.json({
+    success: true,
+    message: "Votre compte a été supprimé.",
+  });
 }

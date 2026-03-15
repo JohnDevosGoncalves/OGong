@@ -14,6 +14,7 @@ model User {
   nom            String
   prenom         String
   email          String    @unique
+  emailVerified  DateTime?
   telephone      String?
   hashedPassword String
   role           String    @default("admin") // super_admin | admin | animateur
@@ -263,6 +264,19 @@ model PasswordResetToken {
   email     String
   expiresAt DateTime
   used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([email])
+}
+
+// ─── Vérification d'email ───────────────────────────────────
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  email     String
+  expiresAt DateTime
   createdAt DateTime @default(now())
 
   @@index([token])

@@ -19,6 +19,10 @@ function getStripe(): Stripe {
 
 export { getStripe };
 
+// ─── Crédits de bienvenue ────────────────────────────────────
+
+export const WELCOME_CREDITS = 5;
+
 // ─── Packs de crédits ───────────────────────────────────────
 
 export const CREDIT_PACKS = [
