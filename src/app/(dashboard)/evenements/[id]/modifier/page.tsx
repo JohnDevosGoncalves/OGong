@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
 const formats = [
@@ -31,16 +31,58 @@ const formats = [
   },
 ];
 
-export default function CreerEvenementPage() {
+interface EvenementData {
+  id: string;
+  titre: string;
+  description: string | null;
+  messageFin: string | null;
+  format: string;
+  date: string;
+  heureDebut: string;
+  heureFin: string;
+  tempsParoleTour: number;
+  tempsPauseTour: number;
+  debutPause: string | null;
+  finPause: string | null;
+  status: string;
+  _count: { participants: number };
+}
+
+export default function ModifierEvenementPage() {
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const [evt, setEvt] = useState<EvenementData | null>(null);
   const [selectedFormat, setSelectedFormat] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [hasParticipants, setHasParticipants] = useState(false);
+
+  const fetchEvent = useCallback(() => {
+    fetch(`/api/evenements/${id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then((data: EvenementData) => {
+        setEvt(data);
+        setSelectedFormat(data.format);
+        setHasParticipants(data._count.participants > 0);
+        setLoading(false);
+      })
+      .catch(() => {
+        router.push("/evenements");
+      });
+  }, [id, router]);
+
+  useEffect(() => {
+    fetchEvent();
+  }, [fetchEvent]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setSubmitting(true);
 
     const form = e.currentTarget;
     const formData = new FormData(form);
@@ -66,37 +108,51 @@ export default function CreerEvenementPage() {
 
     if (!body.titre || !body.format || !body.date || !body.heureDebut || !body.heureFin) {
       setError("Veuillez remplir tous les champs obligatoires et sélectionner un format.");
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
     try {
-      const res = await fetch("/api/evenements", {
-        method: "POST",
+      const res = await fetch(`/api/evenements/${id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Erreur lors de la création.");
-        setLoading(false);
+        setError(data.error || "Erreur lors de la modification.");
+        setSubmitting(false);
         return;
       }
 
-      const evenement = await res.json();
-      router.push(`/evenements/${evenement.id}`);
+      router.push(`/evenements/${id}`);
     } catch {
       setError("Erreur réseau. Réessayez.");
-      setLoading(false);
+      setSubmitting(false);
     }
   }
+
+  if (loading) {
+    return <div className="text-center text-muted py-20">Chargement...</div>;
+  }
+
+  if (!evt) return null;
+
+  // Pre-compute time values from seconds
+  const paroleMinDefault = Math.floor(evt.tempsParoleTour / 60);
+  const paroleSecDefault = evt.tempsParoleTour % 60;
+  const pauseMinDefault = Math.floor(evt.tempsPauseTour / 60);
+  const pauseSecDefault = evt.tempsPauseTour % 60;
+
+  // Format date for input (YYYY-MM-DD)
+  const dateValue = evt.date ? evt.date.substring(0, 10) : "";
 
   return (
     <div>
       <div className="flex items-center gap-4 mb-8">
         <Link
-          href="/evenements"
+          href={`/evenements/${id}`}
           className="p-2 rounded-lg hover:bg-surface-hover transition-colors text-muted hover:text-foreground"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -105,10 +161,10 @@ export default function CreerEvenementPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            Créer un évènement
+            Modifier l&apos;événement
           </h1>
           <p className="text-muted text-sm mt-1">
-            Configurez votre événement de networking.
+            Modifiez les paramètres de votre événement.
           </p>
         </div>
       </div>
@@ -136,6 +192,7 @@ export default function CreerEvenementPage() {
                 name="titre"
                 type="text"
                 required
+                defaultValue={evt.titre}
                 className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                 placeholder="Ex: Demo Day 2024"
               />
@@ -149,6 +206,7 @@ export default function CreerEvenementPage() {
                 id="description"
                 name="description"
                 rows={3}
+                defaultValue={evt.description || ""}
                 className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-none"
                 placeholder="Décrivez votre événement..."
               />
@@ -162,6 +220,7 @@ export default function CreerEvenementPage() {
                 id="messageFin"
                 name="messageFin"
                 type="text"
+                defaultValue={evt.messageFin || ""}
                 className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                 placeholder="Merci pour votre participation !"
               />
@@ -176,6 +235,7 @@ export default function CreerEvenementPage() {
                 name="date"
                 type="date"
                 required
+                defaultValue={dateValue}
                 className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
               />
             </div>
@@ -199,6 +259,7 @@ export default function CreerEvenementPage() {
                   name="heureDebut"
                   type="time"
                   required
+                  defaultValue={evt.heureDebut}
                   className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                 />
               </div>
@@ -211,6 +272,7 @@ export default function CreerEvenementPage() {
                   name="heureFin"
                   type="time"
                   required
+                  defaultValue={evt.heureFin}
                   className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                 />
               </div>
@@ -226,7 +288,7 @@ export default function CreerEvenementPage() {
                     name="parole-min"
                     type="number"
                     min={0}
-                    defaultValue={2}
+                    defaultValue={paroleMinDefault}
                     placeholder="MM"
                     className="w-16 px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                   />
@@ -236,7 +298,7 @@ export default function CreerEvenementPage() {
                     type="number"
                     min={0}
                     max={59}
-                    defaultValue={0}
+                    defaultValue={paroleSecDefault}
                     placeholder="SS"
                     className="w-16 px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                   />
@@ -251,7 +313,7 @@ export default function CreerEvenementPage() {
                     name="pause-min"
                     type="number"
                     min={0}
-                    defaultValue={0}
+                    defaultValue={pauseMinDefault}
                     placeholder="MM"
                     className="w-16 px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                   />
@@ -261,7 +323,7 @@ export default function CreerEvenementPage() {
                     type="number"
                     min={0}
                     max={59}
-                    defaultValue={30}
+                    defaultValue={pauseSecDefault}
                     placeholder="SS"
                     className="w-16 px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                   />
@@ -286,6 +348,7 @@ export default function CreerEvenementPage() {
                     id="debutPause"
                     name="debutPause"
                     type="time"
+                    defaultValue={evt.debutPause || ""}
                     className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                   />
                 </div>
@@ -297,6 +360,7 @@ export default function CreerEvenementPage() {
                     id="finPause"
                     name="finPause"
                     type="time"
+                    defaultValue={evt.finPause || ""}
                     className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                   />
                 </div>
@@ -311,7 +375,9 @@ export default function CreerEvenementPage() {
             Sélection du format *
           </h2>
           <p className="text-muted text-sm mb-5">
-            Cliquez sur une carte pour sélectionner le format de votre événement.
+            {hasParticipants
+              ? "Le format ne peut pas être modifié car des participants sont déjà inscrits."
+              : "Cliquez sur une carte pour sélectionner le format de votre événement."}
           </p>
 
           <div className="space-y-3">
@@ -319,8 +385,11 @@ export default function CreerEvenementPage() {
               <button
                 key={format.id}
                 type="button"
+                disabled={hasParticipants}
                 onClick={() => setSelectedFormat(format.id)}
-                className={`w-full p-4 rounded-xl border-2 text-left transition-all hover:shadow-sm ${
+                className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
+                  hasParticipants ? "opacity-60 cursor-not-allowed" : "hover:shadow-sm"
+                } ${
                   selectedFormat === format.id ? format.activeColor : format.color
                 }`}
               >
@@ -339,13 +408,19 @@ export default function CreerEvenementPage() {
             ))}
           </div>
 
-          <div className="mt-8 pt-6 border-t border-border">
+          <div className="mt-8 pt-6 border-t border-border flex gap-3">
+            <Link
+              href={`/evenements/${id}`}
+              className="flex-1 py-3 px-4 rounded-lg border border-border text-center text-foreground font-medium text-sm hover:bg-surface-hover transition-colors"
+            >
+              Annuler
+            </Link>
             <button
               type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 rounded-lg bg-primary hover:bg-primary-hover text-white font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={submitting}
+              className="flex-1 py-3 px-4 rounded-lg bg-primary hover:bg-primary-hover text-white font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Création en cours…" : "Créer l'événement"}
+              {submitting ? "Enregistrement..." : "Enregistrer les modifications"}
             </button>
           </div>
         </div>

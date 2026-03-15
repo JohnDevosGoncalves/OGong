@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Utilisateurs & Auth ────────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  nom            String
+  prenom         String
+  email          String    @unique
+  telephone      String?
+  hashedPassword String
+  role           String    @default("admin") // super_admin | admin | animateur
+  societeId      String?
+  societe        Societe?  @relation(fields: [societeId], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  sessions       Session[]
+  accounts       Account[]
+  evenements     Evenement[] @relation("EvenementCreateur")
+  animations     Evenement[] @relation("EvenementAnimateurs")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Organisation ───────────────────────────────────────────
+
+model Societe {
+  id        String   @id @default(cuid())
+  nom       String
+  adresse   String?
+  createdAt DateTime @default(now())
+
+  users     User[]
+  exposants Exposant[]
+}
+
+// ─── Événement ──────────────────────────────────────────────
+
+model Evenement {
+  id              String   @id @default(cuid())
+  titre           String
+  description     String?
+  messageFin      String?
+  format          String   // speed_meeting | team | job_dating
+  teamSize        String?  // XS | S | M | L | XL
+  date            DateTime
+  heureDebut      String
+  heureFin        String
+  tempsParoleTour Int      @default(120) // secondes
+  tempsPauseTour  Int      @default(30)  // secondes
+  debutPause      String?
+  finPause        String?
+  status          String   @default("brouillon") // brouillon | ouvert | en_cours | termine
+  createurId      String
+  createur        User     @relation("EvenementCreateur", fields: [createurId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  animateurs      User[]        @relation("EvenementAnimateurs")
+  participants    Participant[]
+  tours           Tour[]
+  tables          Table[]
+  exposants       Exposant[]
+}
+
+// ─── Participant ────────────────────────────────────────────
+
+model Participant {
+  id           String    @id @default(cuid())
+  nom          String
+  prenom       String
+  email        String
+  telephone    String?
+  numero       Int?
+  present      Boolean   @default(false)
+  evenementId  String
+  evenement    Evenement @relation(fields: [evenementId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+
+  affectations AffectationTable[]
+
+  @@unique([email, evenementId])
+}
+
+// ─── Tables ─────────────────────────────────────────────────
+
+model Table {
+  id           String    @id @default(cuid())
+  numero       Int
+  evenementId  String
+  evenement    Evenement @relation(fields: [evenementId], references: [id], onDelete: Cascade)
+
+  affectations AffectationTable[]
+
+  @@unique([numero, evenementId])
+}
+
+model AffectationTable {
+  id            String      @id @default(cuid())
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  tableId       String
+  table         Table       @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  tourId        String
+  tour          Tour        @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, tourId])
+}
+
+// ─── Tours ──────────────────────────────────────────────────
+
+model Tour {
+  id           String    @id @default(cuid())
+  numero       Int
+  evenementId  String
+  evenement    Evenement @relation(fields: [evenementId], references: [id], onDelete: Cascade)
+  status       String    @default("en_attente") // en_attente | en_cours | pause | termine
+
+  affectations AffectationTable[]
+
+  @@unique([numero, evenementId])
+}
+
+// ─── Exposant (Job Dating) ──────────────────────────────────
+
+model Exposant {
+  id           String    @id @default(cuid())
+  societeId    String
+  societe      Societe   @relation(fields: [societeId], references: [id])
+  evenementId  String
+  evenement    Evenement @relation(fields: [evenementId], references: [id], onDelete: Cascade)
+
+  creneaux     Creneau[]
+
+  @@unique([societeId, evenementId])
+}
+
+model Creneau {
+  id              String   @id @default(cuid())
+  heureDebut      String
+  heureFin        String
+  maxParticipants Int      @default(1)
+  exposantId      String
+  exposant        Exposant @relation(fields: [exposantId], references: [id], onDelete: Cascade)
+
+  inscriptions    InscriptionCreneau[]
+}
+
+model InscriptionCreneau {
+  id            String   @id @default(cuid())
+  participantId String
+  creneauId     String
+  creneau       Creneau  @relation(fields: [creneauId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@unique([participantId, creneauId])
+}
