@@ -45,3 +45,18 @@ export const changePasswordSchema = z.object({
 });
 
 export const inscriptionSchema = addParticipantSchema;
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Adresse email invalide").max(254),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, "Jeton de réinitialisation requis"),
+    newPassword: z.string().min(8, "Le mot de passe doit faire au moins 8 caractères"),
+    confirmPassword: z.string().min(1, "Veuillez confirmer le mot de passe"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Les mots de passe ne correspondent pas",
+    path: ["confirmPassword"],
+  });

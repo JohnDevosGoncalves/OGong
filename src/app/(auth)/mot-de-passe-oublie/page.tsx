@@ -2,15 +2,39 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Button, Input } from "@/components/ui";
 
 export default function MotDePasseOubliePage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Pour l'instant, on simule l'envoi (pas de service email configuré)
-    setSubmitted(true);
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Une erreur est survenue.");
+        return;
+      }
+
+      setSubmitted(true);
+    } catch {
+      setError("Impossible de contacter le serveur.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (submitted) {
@@ -49,27 +73,19 @@ export default function MotDePasseOubliePage() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1.5">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-surface text-foreground text-sm placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
-            placeholder="vous@exemple.fr"
-          />
-        </div>
+        <Input
+          label="Email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="vous@exemple.fr"
+          error={error || undefined}
+        />
 
-        <button
-          type="submit"
-          className="w-full py-2.5 px-4 rounded-lg bg-primary hover:bg-primary-hover text-white font-medium text-sm transition-colors"
-        >
+        <Button type="submit" loading={loading} className="w-full">
           Envoyer le lien
-        </button>
+        </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-muted">
