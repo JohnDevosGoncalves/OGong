@@ -18,7 +18,7 @@ model User {
   hashedPassword String
   role           String    @default("admin") // super_admin | admin | animateur
   societeId      String?
-  societe        Societe?  @relation(fields: [societeId], references: [id])
+  societe        Societe?  @relation(fields: [societeId], references: [id], onDelete: SetNull)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -93,6 +93,8 @@ model Evenement {
   tours           Tour[]
   tables          Table[]
   exposants       Exposant[]
+
+  @@index([createurId])
 }
 
 // ─── Participant ────────────────────────────────────────────
@@ -110,8 +112,10 @@ model Participant {
   createdAt    DateTime  @default(now())
 
   affectations AffectationTable[]
+  inscriptions InscriptionCreneau[]
 
   @@unique([email, evenementId])
+  @@index([evenementId])
 }
 
 // ─── Tables ─────────────────────────────────────────────────
@@ -125,6 +129,7 @@ model Table {
   affectations AffectationTable[]
 
   @@unique([numero, evenementId])
+  @@index([evenementId])
 }
 
 model AffectationTable {
@@ -137,6 +142,9 @@ model AffectationTable {
   tour          Tour        @relation(fields: [tourId], references: [id], onDelete: Cascade)
 
   @@unique([participantId, tourId])
+  @@index([tourId])
+  @@index([tableId])
+  @@index([participantId])
 }
 
 // ─── Tours ──────────────────────────────────────────────────
@@ -151,6 +159,7 @@ model Tour {
   affectations AffectationTable[]
 
   @@unique([numero, evenementId])
+  @@index([evenementId])
 }
 
 // ─── Exposant (Job Dating) ──────────────────────────────────
@@ -165,6 +174,8 @@ model Exposant {
   creneaux     Creneau[]
 
   @@unique([societeId, evenementId])
+  @@index([evenementId])
+  @@index([societeId])
 }
 
 model Creneau {
@@ -179,11 +190,12 @@ model Creneau {
 }
 
 model InscriptionCreneau {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
   creneauId     String
-  creneau       Creneau  @relation(fields: [creneauId], references: [id], onDelete: Cascade)
-  createdAt     DateTime @default(now())
+  creneau       Creneau     @relation(fields: [creneauId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
 
   @@unique([participantId, creneauId])
 }

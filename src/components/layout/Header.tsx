@@ -30,7 +30,10 @@ export default function Header({ userName = "Utilisateur" }: HeaderProps) {
         {evtCount !== null && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted">Événements :</span>
-            <span className="flex items-center justify-center h-6 px-2 rounded-full bg-primary/10 text-primary text-xs font-bold">
+            <span
+              className="flex items-center justify-center h-6 px-2 rounded-full bg-primary/10 text-primary text-xs font-bold"
+              aria-label={`${evtCount} événement${evtCount > 1 ? "s" : ""}`}
+            >
               {evtCount}
             </span>
           </div>

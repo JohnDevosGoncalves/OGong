@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { getAuthSession, getEventWithOwnership } from "@/lib/api-utils";
 
 const BOM = "\uFEFF";
 const SEP = ";";
@@ -34,30 +34,18 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const { userId, error: authError } = await getAuthSession();
+  if (authError) return authError;
 
   const { id } = await params;
 
-  const evenement = await prisma.evenement.findUnique({
-    where: { id },
-    select: { id: true, titre: true, createurId: true },
-  });
-
-  if (!evenement) {
-    return NextResponse.json({ error: "Événement introuvable" }, { status: 404 });
-  }
-
-  if (evenement.createurId !== session.user.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-  }
+  const { evenement, error: ownerError } = await getEventWithOwnership(id, userId);
+  if (ownerError) return ownerError;
 
   const url = new URL(request.url);
   const type = url.searchParams.get("type");
 
-  const safeTitle = evenement.titre.replace(/[^a-zA-Z0-9àâäéèêëïîôùûüÿçÀÂÄÉÈÊËÏÎÔÙÛÜŸÇ _-]/g, "").slice(0, 40);
+  const safeTitle = evenement!.titre.replace(/[^a-zA-Z0-9àâäéèêëïîôùûüÿçÀÂÄÉÈÊËÏÎÔÙÛÜŸÇ _-]/g, "").slice(0, 40);
 
   // ── Export participants ──────────────────────────────────
   if (type === "participants") {

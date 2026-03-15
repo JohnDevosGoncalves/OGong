@@ -1,23 +1,20 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { getAuthSession, getEventWithOwnership, sanitize, sanitizeEmail } from "@/lib/api-utils";
+import { addParticipantSchema, bulkParticipantsSchema } from "@/lib/validations";
 
 // GET /api/evenements/[id]/participants — liste des participants
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const { userId, error: authError } = await getAuthSession();
+  if (authError) return authError;
 
   const { id } = await params;
 
-  const evenement = await prisma.evenement.findUnique({ where: { id } });
-  if (!evenement || evenement.createurId !== session.user.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-  }
+  const { error: ownerError } = await getEventWithOwnership(id, userId);
+  if (ownerError) return ownerError;
 
   const participants = await prisma.participant.findMany({
     where: { evenementId: id },
@@ -32,37 +29,32 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const { userId, error: authError } = await getAuthSession();
+  if (authError) return authError;
 
   const { id } = await params;
 
-  const evenement = await prisma.evenement.findUnique({ where: { id } });
-  if (!evenement || evenement.createurId !== session.user.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-  }
+  const { error: ownerError } = await getEventWithOwnership(id, userId);
+  if (ownerError) return ownerError;
 
   const body = await request.json();
 
   // Support ajout unique ou bulk (CSV)
-  const participantsData: Array<{
-    nom: string;
-    prenom: string;
-    email: string;
-    telephone?: string;
-  }> = Array.isArray(body) ? body : [body];
+  const isBulk = Array.isArray(body);
+  const parsed = isBulk
+    ? bulkParticipantsSchema.safeParse(body)
+    : addParticipantSchema.safeParse(body);
 
-  // Valider les données
-  for (const p of participantsData) {
-    if (!p.nom || !p.prenom || !p.email) {
-      return NextResponse.json(
-        { error: `Nom, prénom et email sont requis pour chaque participant. Erreur sur: ${p.email || "inconnu"}` },
-        { status: 400 }
-      );
-    }
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0].message },
+      { status: 400 }
+    );
   }
+
+  const participantsData = isBulk
+    ? (parsed.data as Array<{ nom: string; prenom: string; email: string; telephone?: string | null }>)
+    : [parsed.data as { nom: string; prenom: string; email: string; telephone?: string | null }];
 
   // Récupérer le dernier numéro attribué
   const lastParticipant = await prisma.participant.findFirst({
@@ -78,18 +70,19 @@ export async function POST(
     try {
       const participant = await prisma.participant.create({
         data: {
-          nom: p.nom,
-          prenom: p.prenom,
-          email: p.email.toLowerCase().trim(),
-          telephone: p.telephone || null,
+          nom: sanitize(p.nom),
+          prenom: sanitize(p.prenom),
+          email: sanitizeEmail(p.email),
+          telephone: p.telephone ? sanitize(p.telephone) : null,
           numero: nextNumero,
           evenementId: id,
         },
       });
       created.push(participant);
       nextNumero++;
-    } catch {
+    } catch (error) {
       // Doublon email/evenement — on skip
+      console.error("Erreur ajout participant (doublon probable):", error);
       skipped.push(p.email);
     }
   }
@@ -110,17 +103,13 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const { userId, error: authError } = await getAuthSession();
+  if (authError) return authError;
 
   const { id } = await params;
 
-  const evenement = await prisma.evenement.findUnique({ where: { id } });
-  if (!evenement || evenement.createurId !== session.user.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-  }
+  const { error: ownerError } = await getEventWithOwnership(id, userId);
+  if (ownerError) return ownerError;
 
   const body = await request.json();
   const { participantId, present } = body;
@@ -157,17 +146,13 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const { userId, error: authError } = await getAuthSession();
+  if (authError) return authError;
 
   const { id } = await params;
 
-  const evenement = await prisma.evenement.findUnique({ where: { id } });
-  if (!evenement || evenement.createurId !== session.user.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-  }
+  const { error: ownerError } = await getEventWithOwnership(id, userId);
+  if (ownerError) return ownerError;
 
   const body = await request.json();
   const { participantId } = body;

@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { getAuthSession, sanitize } from "@/lib/api-utils";
+import { createEventSchema } from "@/lib/validations";
 
 // GET /api/evenements — liste des événements de l'utilisateur connecté
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const { userId, error } = await getAuthSession();
+  if (error) return error;
 
   const evenements = await prisma.evenement.findMany({
-    where: { createurId: session.user.id },
+    where: { createurId: userId },
     include: {
       _count: { select: { participants: true } },
     },
@@ -22,51 +21,37 @@ export async function GET() {
 
 // POST /api/evenements — créer un événement
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const { userId, error } = await getAuthSession();
+  if (error) return error;
 
   try {
     const body = await request.json();
 
-    const {
-      titre,
-      description,
-      messageFin,
-      format,
-      teamSize,
-      date,
-      heureDebut,
-      heureFin,
-      tempsParoleTour,
-      tempsPauseTour,
-      debutPause,
-      finPause,
-    } = body;
-
-    if (!titre || !format || !date || !heureDebut || !heureFin) {
+    const parsed = createEventSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Les champs titre, format, date, heureDebut et heureFin sont requis." },
+        { error: parsed.error.issues[0].message },
         { status: 400 }
       );
     }
 
+    const data = parsed.data;
+
     const evenement = await prisma.evenement.create({
       data: {
-        titre,
-        description: description || null,
-        messageFin: messageFin || null,
-        format,
-        teamSize: teamSize || null,
-        date: new Date(date),
-        heureDebut,
-        heureFin,
-        tempsParoleTour: tempsParoleTour || 120,
-        tempsPauseTour: tempsPauseTour || 30,
-        debutPause: debutPause || null,
-        finPause: finPause || null,
-        createurId: session.user.id,
+        titre: sanitize(data.titre),
+        description: data.description ? sanitize(data.description) : null,
+        messageFin: data.messageFin ? sanitize(data.messageFin) : null,
+        format: data.format,
+        teamSize: data.teamSize || null,
+        date: new Date(data.date),
+        heureDebut: data.heureDebut,
+        heureFin: data.heureFin,
+        tempsParoleTour: data.tempsParoleTour || 120,
+        tempsPauseTour: data.tempsPauseTour || 30,
+        debutPause: body.debutPause || null,
+        finPause: body.finPause || null,
+        createurId: userId,
       },
     });
 

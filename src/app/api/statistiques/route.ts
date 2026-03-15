@@ -1,15 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { getAuthSession } from "@/lib/api-utils";
 
 // GET /api/statistiques — statistiques globales de l'utilisateur
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
-
-  const userId = session.user.id;
+  const { userId, error } = await getAuthSession();
+  if (error) return error;
 
   // Nombre d'événements par statut
   const evenements = await prisma.evenement.findMany({
