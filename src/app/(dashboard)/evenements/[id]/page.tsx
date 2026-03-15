@@ -10,6 +10,8 @@ import AddParticipantForm from "@/components/evenement/AddParticipantForm";
 import CSVImporter from "@/components/evenement/CSVImporter";
 import ExportMenu from "@/components/evenement/ExportMenu";
 import DeleteEventModal from "@/components/evenement/DeleteEventModal";
+import ExposantManager from "@/components/evenement/ExposantManager";
+import TeamManager from "@/components/evenement/TeamManager";
 
 interface ParticipantRow {
   id: string;
@@ -187,8 +189,30 @@ export default function EvenementDetailPage() {
         </div>
       </div>
 
-      {/* Algorithm stats */}
-      <AlgoStats eventId={id} hasTours={hasTours} />
+      {/* Algorithm stats (speed_meeting only) */}
+      {evt.format === "speed_meeting" && (
+        <AlgoStats eventId={id} hasTours={hasTours} />
+      )}
+
+      {/* Job Dating: Exposant manager */}
+      {evt.format === "job_dating" && (
+        <div className="mb-8">
+          <ExposantManager
+            eventId={id}
+            heureDebut={evt.heureDebut}
+            heureFin={evt.heureFin}
+            tempsParoleTour={evt.tempsParoleTour}
+            tempsPauseTour={evt.tempsPauseTour}
+          />
+        </div>
+      )}
+
+      {/* Team: Team manager */}
+      {evt.format === "team" && (
+        <div className="mb-8">
+          <TeamManager eventId={id} nbParticipants={nbParticipants} />
+        </div>
+      )}
 
       {/* Participants section */}
       <div className="bg-surface rounded-xl border border-border p-6">

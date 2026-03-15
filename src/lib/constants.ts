@@ -17,6 +17,17 @@ export const ROLE_LABELS: Record<string, { label: string; variant: string }> = {
   animateur: { label: "Animateur", variant: "accent" },
 };
 
+export const COLLAB_ROLE_LABELS: Record<string, { label: string; variant: string }> = {
+  createur: { label: "Créateur", variant: "danger" },
+  co_organisateur: { label: "Co-organisateur", variant: "primary" },
+  animateur: { label: "Animateur", variant: "accent" },
+};
+
+export const COLLAB_STATUS_LABELS: Record<string, { label: string; variant: string }> = {
+  en_attente: { label: "En attente", variant: "warning" },
+  accepte: { label: "Accepté", variant: "success" },
+};
+
 export const FORMATS = [
   { value: "speed_meeting", label: "Speed meeting", description: "Rencontres 1 à 1 minutées", icon: "⏱" },
   { value: "team", label: "Team", description: "Équipes tournantes XS à XL", icon: "👥" },

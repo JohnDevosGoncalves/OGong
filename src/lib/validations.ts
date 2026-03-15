@@ -60,3 +60,57 @@ export const resetPasswordSchema = z
     message: "Les mots de passe ne correspondent pas",
     path: ["confirmPassword"],
   });
+
+// ─── Collaborateurs ─────────────────────────────────────────
+
+export const inviteCollaborateurSchema = z.object({
+  email: z.string().email("Adresse email invalide").max(254),
+  role: z.enum(["animateur", "co_organisateur"], {
+    error: "Le rôle doit être animateur ou co-organisateur",
+  }),
+});
+
+export const repondreInvitationSchema = z.object({
+  invitationId: z.string().min(1, "Identifiant d'invitation requis"),
+  action: z.enum(["accepter", "refuser"], {
+    error: "L'action doit être accepter ou refuser",
+  }),
+});
+
+// ─── Job Dating ──────────────────────────────────────────────
+
+export const addExposantSchema = z.object({
+  nom: z.string().min(1, "Le nom est requis").max(200),
+  description: z.string().max(2000).optional(),
+  entreprise: z.string().max(200).optional(),
+  poste: z.string().max(200).optional(),
+});
+
+export const addCreneauSchema = z.object({
+  exposantId: z.string().min(1, "L'exposant est requis"),
+  heureDebut: z.string().regex(/^\d{2}:\d{2}$/, "Format HH:MM requis"),
+  heureFin: z.string().regex(/^\d{2}:\d{2}$/, "Format HH:MM requis"),
+  capacite: z.number().int().min(1).max(100).optional().default(1),
+});
+
+// ─── Team ────────────────────────────────────────────────────
+
+export const generateTeamsSchema = z.object({
+  nbEquipes: z.number().int().min(2, "Il faut au moins 2 équipes").max(50),
+});
+
+// ─── Notifications ──────────────────────────────────────────
+
+export const sendNotificationSchema = z.object({
+  type: z.enum(["reminder", "start", "results"], {
+    error: "Type de notification invalide. Valeurs possibles : reminder, start, results",
+  }),
+});
+
+// ─── Crédits ────────────────────────────────────────────────
+
+export const buyCreditsSchema = z.object({
+  packId: z.enum(["pack_10", "pack_25", "pack_50", "pack_100"], {
+    error: "Pack de crédits invalide",
+  }),
+});

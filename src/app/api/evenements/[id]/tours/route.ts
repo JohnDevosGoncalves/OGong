@@ -135,7 +135,95 @@ export async function POST(
   const body = await request.json().catch(() => ({}));
   const nbTours = body.nbTours ? Number(body.nbTours) : undefined;
 
-  // Lancer l'algorithme
+  // ─── Format Team : les équipes tournent au lieu des individus ──
+  if (evenement.format === "team") {
+    // Regrouper les participants par équipe (numero = numéro d'équipe)
+    const teamMap = new Map<number, string[]>();
+    for (const p of evenement.participants) {
+      if (p.numero && p.numero > 0) {
+        if (!teamMap.has(p.numero)) teamMap.set(p.numero, []);
+        teamMap.get(p.numero)!.push(p.id);
+      }
+    }
+
+    const teamNumbers = Array.from(teamMap.keys()).sort((a, b) => a - b);
+    if (teamNumbers.length < 2) {
+      return NextResponse.json(
+        { error: "Il faut au moins 2 équipes pour lancer l'événement. Générez les équipes d'abord." },
+        { status: 400 }
+      );
+    }
+
+    // Utiliser l'algorithme avec les équipes comme "participants virtuels"
+    // Chaque équipe est représentée par un ID virtuel "team_N"
+    const teamIds = teamNumbers.map((n) => `team_${n}`);
+    const result = calculerAffectations(teamIds, "team", undefined, nbTours);
+
+    // Déterminer les numéros de table uniques
+    const tableNumeros = new Set<number>();
+    for (const tour of result.tours) {
+      for (const table of tour.tables) {
+        tableNumeros.add(table.tableNumero);
+      }
+    }
+
+    // Créer les tables (points de rencontre)
+    const tablesCreated = await Promise.all(
+      Array.from(tableNumeros)
+        .sort((a, b) => a - b)
+        .map((numero) =>
+          prisma.table.create({
+            data: { numero, evenementId: id },
+          })
+        )
+    );
+    const tableIdByNumero = new Map(tablesCreated.map((t) => [t.numero, t.id]));
+
+    // Créer les tours et affectations
+    // Pour chaque équipe placée à une table, tous ses membres y vont
+    for (const tourData of result.tours) {
+      const tour = await prisma.tour.create({
+        data: {
+          numero: tourData.tourNumero,
+          evenementId: id,
+          status: "en_attente",
+        },
+      });
+
+      const affectations = [];
+      for (const table of tourData.tables) {
+        const tableId = tableIdByNumero.get(table.tableNumero);
+        if (!tableId) continue;
+
+        for (const virtualId of table.participantIds) {
+          // virtualId = "team_N" → récupérer les vrais participants
+          const teamNum = parseInt(virtualId.replace("team_", ""), 10);
+          const memberIds = teamMap.get(teamNum) || [];
+          for (const participantId of memberIds) {
+            affectations.push({ participantId, tableId, tourId: tour.id });
+          }
+        }
+      }
+
+      if (affectations.length > 0) {
+        await prisma.affectationTable.createMany({ data: affectations });
+      }
+    }
+
+    await prisma.evenement.update({
+      where: { id },
+      data: { status: "en_cours" },
+    });
+
+    return NextResponse.json({
+      success: true,
+      nbTours: result.tours.length,
+      nbEquipes: teamNumbers.length,
+      stats: result.stats,
+    });
+  }
+
+  // ─── Format Speed Meeting (et fallback) ──────────────────────
   const participantIds = evenement.participants.map((p) => p.id);
   const result = calculerAffectations(participantIds, evenement.format, undefined, nbTours);
 

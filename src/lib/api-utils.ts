@@ -17,6 +17,29 @@ export async function getEventWithOwnership(eventId: string, userId: string) {
   return { evenement, error: null as null };
 }
 
+export async function getEventAccess(eventId: string, userId: string) {
+  const evenement = await prisma.evenement.findUnique({ where: { id: eventId } });
+  if (!evenement) {
+    return { evenement: null as null, role: null as null, error: NextResponse.json({ error: "Événement introuvable" }, { status: 404 }) };
+  }
+
+  // Créateur = accès total
+  if (evenement.createurId === userId) {
+    return { evenement, role: "createur" as const, error: null as null };
+  }
+
+  // Collaborateur accepté
+  const collab = await prisma.collaborateur.findUnique({
+    where: { userId_evenementId: { userId, evenementId: eventId } },
+  });
+
+  if (collab && collab.accepte) {
+    return { evenement, role: collab.role as "co_organisateur" | "animateur", error: null as null };
+  }
+
+  return { evenement: null as null, role: null as null, error: NextResponse.json({ error: "Non autorisé" }, { status: 403 }) };
+}
+
 export function sanitize(str: string): string {
   return str.trim().replace(/<[^>]*>/g, "").slice(0, 500);
 }

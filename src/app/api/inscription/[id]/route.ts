@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { sanitize, sanitizeEmail } from "@/lib/api-utils";
 import { inscriptionSchema } from "@/lib/validations";
+import { sendInscriptionConfirmation } from "@/lib/email";
 
 // GET /api/inscription/[id] — infos publiques d'un événement (pas d'auth requise)
 export async function GET(
@@ -52,7 +53,16 @@ export async function POST(
 
   const evenement = await prisma.evenement.findUnique({
     where: { id },
-    select: { id: true, status: true, _count: { select: { participants: true } } },
+    select: {
+      id: true,
+      titre: true,
+      date: true,
+      heureDebut: true,
+      heureFin: true,
+      format: true,
+      status: true,
+      _count: { select: { participants: true } },
+    },
   });
 
   if (!evenement) {
@@ -113,6 +123,20 @@ export async function POST(
         evenementId: id,
       },
     });
+
+    // Envoyer l'email de confirmation (ne bloque pas l'inscription en cas d'erreur)
+    try {
+      await sendInscriptionConfirmation(sanitizedEmail, sanitizedPrenom, {
+        titre: evenement.titre,
+        date: evenement.date,
+        heureDebut: evenement.heureDebut,
+        heureFin: evenement.heureFin,
+        format: evenement.format,
+        numero: participant.numero!,
+      });
+    } catch (emailError) {
+      console.error("Erreur envoi email de confirmation:", emailError);
+    }
 
     return NextResponse.json({
       success: true,

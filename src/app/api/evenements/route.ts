@@ -2,19 +2,44 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthSession, sanitize } from "@/lib/api-utils";
 import { createEventSchema } from "@/lib/validations";
+import { getUserCredits } from "@/lib/stripe";
 
-// GET /api/evenements — liste des événements de l'utilisateur connecté
+// GET /api/evenements — liste des événements de l'utilisateur connecté + collaborations
 export async function GET() {
   const { userId, error } = await getAuthSession();
   if (error) return error;
 
-  const evenements = await prisma.evenement.findMany({
+  // Événements créés par l'utilisateur
+  const ownEvents = await prisma.evenement.findMany({
     where: { createurId: userId },
     include: {
       _count: { select: { participants: true } },
     },
     orderBy: { date: "desc" },
   });
+
+  // Événements où l'utilisateur est collaborateur accepté
+  const collaborations = await prisma.collaborateur.findMany({
+    where: { userId, accepte: true },
+    include: {
+      evenement: {
+        include: {
+          _count: { select: { participants: true } },
+        },
+      },
+    },
+  });
+
+  const ownWithRole = ownEvents.map((evt) => ({ ...evt, role: "createur" as const }));
+  const collabWithRole = collaborations.map((c) => ({
+    ...c.evenement,
+    role: c.role as "co_organisateur" | "animateur",
+  }));
+
+  // Fusionner et trier par date décroissante
+  const evenements = [...ownWithRole, ...collabWithRole].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
 
   return NextResponse.json(evenements);
 }
@@ -37,6 +62,15 @@ export async function POST(request: Request) {
 
     const data = parsed.data;
 
+    // Vérifier que l'utilisateur a suffisamment de crédits
+    const solde = await getUserCredits(userId);
+    if (solde < 1) {
+      return NextResponse.json(
+        { error: "Crédits insuffisants. Veuillez acheter des crédits pour créer un événement." },
+        { status: 402 }
+      );
+    }
+
     const evenement = await prisma.evenement.create({
       data: {
         titre: sanitize(data.titre),
@@ -52,6 +86,16 @@ export async function POST(request: Request) {
         debutPause: body.debutPause || null,
         finPause: body.finPause || null,
         createurId: userId,
+      },
+    });
+
+    // Déduire 1 crédit pour la création de l'événement
+    await prisma.credit.create({
+      data: {
+        userId,
+        montant: -1,
+        type: "utilisation",
+        detail: `Création événement : ${sanitize(data.titre)}`,
       },
     });
 

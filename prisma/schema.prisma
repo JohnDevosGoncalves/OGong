@@ -26,6 +26,10 @@ model User {
   accounts       Account[]
   evenements     Evenement[] @relation("EvenementCreateur")
   animations     Evenement[] @relation("EvenementAnimateurs")
+  collaborations Collaborateur[] @relation("CollaborateurUser")
+  invitations    Collaborateur[] @relation("CollaborateurInviteur")
+  credits        Credit[]
+  paiements      Paiement[]
 }
 
 model Account {
@@ -89,6 +93,7 @@ model Evenement {
   updatedAt       DateTime @updatedAt
 
   animateurs      User[]        @relation("EvenementAnimateurs")
+  collaborateurs  Collaborateur[]
   participants    Participant[]
   tours           Tour[]
   tables          Table[]
@@ -198,6 +203,56 @@ model InscriptionCreneau {
   createdAt     DateTime    @default(now())
 
   @@unique([participantId, creneauId])
+}
+
+// ─── Collaborateur (multi-utilisateurs) ───────────────────────
+
+model Collaborateur {
+  id           String   @id @default(cuid())
+  role         String   @default("animateur") // "animateur" | "co_organisateur"
+  userId       String
+  evenementId  String
+  invitePar    String   // userId of whoever invited them
+  accepte      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  user       User       @relation("CollaborateurUser", fields: [userId], references: [id], onDelete: Cascade)
+  evenement  Evenement  @relation(fields: [evenementId], references: [id], onDelete: Cascade)
+  inviteur   User       @relation("CollaborateurInviteur", fields: [invitePar], references: [id], onDelete: Cascade)
+
+  @@unique([userId, evenementId])
+  @@index([userId])
+  @@index([evenementId])
+}
+
+// ─── Crédits & Paiements ─────────────────────────────────────
+
+model Credit {
+  id        String   @id @default(cuid())
+  userId    String
+  montant   Int      // nombre de crédits
+  type      String   // "achat" | "utilisation" | "bonus"
+  detail    String?  // description
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Paiement {
+  id               String   @id @default(cuid())
+  userId           String
+  stripeSessionId  String   @unique
+  montantEuros     Float
+  credits          Int
+  status           String   @default("en_attente") // "en_attente" | "complete" | "echoue"
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([stripeSessionId])
 }
 
 // ─── Réinitialisation de mot de passe ────────────────────────
