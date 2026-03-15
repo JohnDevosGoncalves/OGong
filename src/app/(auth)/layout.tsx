@@ -1,0 +1,39 @@
+import Logo from "@/components/layout/Logo";
+
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+      {/* Formulaire */}
+      <div className="flex flex-col justify-center px-8 lg:px-16 xl:px-24 py-12">
+        <div className="flex items-center gap-3 mb-12">
+          <Logo size={36} />
+          <span className="text-xl font-bold text-foreground tracking-tight">
+            ogong
+          </span>
+        </div>
+        {children}
+      </div>
+
+      {/* Illustration */}
+      <div className="hidden lg:flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 relative overflow-hidden">
+        <div className="text-center px-12">
+          <h2 className="text-4xl font-bold text-foreground mb-4">Ogong</h2>
+          <p className="text-xl text-primary font-medium mb-2 italic">
+            Générateur de rencontres
+          </p>
+          <p className="text-muted max-w-md mx-auto">
+            Organisez vos événements de networking en quelques clics. Speed
+            meetings, team building, job datings.
+          </p>
+        </div>
+        {/* Decorative circles */}
+        <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-accent/5" />
+        <div className="absolute -top-10 -left-10 w-60 h-60 rounded-full bg-primary/5" />
+      </div>
+    </div>
+  );
+}
