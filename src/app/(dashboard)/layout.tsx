@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 
 export default async function DashboardLayout({
   children,
@@ -23,9 +24,10 @@ export default async function DashboardLayout({
         Aller au contenu
       </a>
       <Sidebar />
-      <div className="ml-64">
+      <div className="ml-64 flex flex-col min-h-screen">
         <Header userName={session.user.name ?? "Utilisateur"} />
-        <main id="main-content" className="p-8">{children}</main>
+        <main id="main-content" className="p-8 flex-1">{children}</main>
+        <Footer />
       </div>
     </div>
   );

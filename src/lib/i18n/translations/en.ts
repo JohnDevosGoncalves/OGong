@@ -1,0 +1,96 @@
+import type { Translations } from "./fr";
+
+export const en: Translations = {
+  common: {
+    loading: "Loading...",
+    save: "Save",
+    cancel: "Cancel",
+    delete: "Delete",
+    edit: "Edit",
+    create: "Create",
+    back: "Back",
+    search: "Search",
+    confirm: "Confirm",
+    error: "An error occurred",
+    success: "Operation successful",
+    noResults: "No results",
+  },
+  auth: {
+    login: "Log in",
+    logout: "Log out",
+    register: "Create an account",
+    email: "Email",
+    password: "Password",
+    forgotPassword: "Forgot password?",
+    resetPassword: "Reset password",
+  },
+  nav: {
+    events: "Events",
+    statistics: "Statistics",
+    credits: "Credits",
+    account: "My account",
+    invitations: "Invitations",
+    users: "Users",
+    createEvent: "Create an event",
+    skipToContent: "Skip to content",
+    mainMenu: "Main menu",
+  },
+  events: {
+    title: "My events",
+    create: "Create an event",
+    noEvents: "No events yet",
+    participants: "Participants",
+    tours: "Rounds",
+    format: {
+      speed_meeting: "Speed Meeting",
+      team: "Team Building",
+      job_dating: "Job Dating",
+    },
+    status: {
+      brouillon: "Draft",
+      ouvert: "Open",
+      en_cours: "In progress",
+      termine: "Completed",
+    },
+  },
+  notifications: {
+    label: "Notifications",
+    reminder: "Send reminder",
+    start: "Notify start",
+    results: "Send results",
+  },
+  credits: {
+    balance: "Credit balance",
+    buy: "Buy credits",
+    history: "Transaction history",
+  },
+  header: {
+    greeting: "Hello",
+    eventsLabel: "Events",
+    logout: "Log out",
+  },
+  roles: {
+    super_admin: "Super Admin",
+    admin: "Administrator",
+    animateur: "Facilitator",
+  },
+  collabRoles: {
+    createur: "Creator",
+    co_organisateur: "Co-organizer",
+    animateur: "Facilitator",
+  },
+  collabStatus: {
+    en_attente: "Pending",
+    accepte: "Accepted",
+  },
+  formats: {
+    speed_meeting: { label: "Speed meeting", description: "Timed 1-on-1 meetings" },
+    team: { label: "Team", description: "Rotating teams XS to XL" },
+    job_dating: { label: "Job dating", description: "Exhibitors and time slots" },
+  },
+  languageSwitcher: {
+    label: "Change language",
+    fr: "French",
+    en: "English",
+  },
+} as const;

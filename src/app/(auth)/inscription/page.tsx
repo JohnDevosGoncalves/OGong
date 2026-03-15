@@ -175,8 +175,20 @@ export default function InscriptionPage() {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-muted">
-        Déjà inscrit ?{" "}
+      <p className="mt-4 text-center text-xs text-muted leading-relaxed">
+        En cr&eacute;ant un compte, vous acceptez nos{" "}
+        <Link href="/cgu" className="text-primary hover:text-primary-hover underline transition-colors">
+          CGU
+        </Link>{" "}
+        et notre{" "}
+        <Link href="/confidentialite" className="text-primary hover:text-primary-hover underline transition-colors">
+          Politique de confidentialit&eacute;
+        </Link>
+        .
+      </p>
+
+      <p className="mt-4 text-center text-sm text-muted">
+        D&eacute;j&agrave; inscrit ?{" "}
         <Link href="/connexion" className="text-primary font-medium hover:text-primary-hover transition-colors">
           Se connecter
         </Link>

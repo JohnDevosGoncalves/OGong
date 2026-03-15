@@ -20,6 +20,26 @@
   --surface-hover: #f3f4f6;
 }
 
+html.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --sidebar: #1e1b4b;
+  --sidebar-hover: #312e81;
+  --sidebar-active: #4338ca;
+  --primary: #7c6fff;
+  --primary-hover: #6d5de6;
+  --primary-light: #a78bfa;
+  --accent: #fb923c;
+  --accent-hover: #f97316;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --muted: #94a3b8;
+  --border: #334155;
+  --surface: #1e293b;
+  --surface-hover: #273549;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -45,6 +65,13 @@
 body {
   background: var(--background);
   color: var(--foreground);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+*,
+*::before,
+*::after {
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
 @keyframes pulse-danger {

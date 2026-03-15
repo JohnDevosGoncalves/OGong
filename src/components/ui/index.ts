@@ -15,3 +15,9 @@ export type { BadgeProps } from "./Badge";
 
 export { StatCard } from "./StatCard";
 export type { StatCardProps } from "./StatCard";
+
+export { ThemeToggle } from "./ThemeToggle";
+
+export { InstallPrompt } from "./InstallPrompt";
+
+export { LanguageSwitcher } from "./LanguageSwitcher";

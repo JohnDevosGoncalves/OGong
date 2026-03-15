@@ -1,4 +1,5 @@
 import Logo from "@/components/layout/Logo";
+import Footer from "@/components/layout/Footer";
 
 export default function AuthLayout({
   children,
@@ -8,14 +9,19 @@ export default function AuthLayout({
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
       {/* Formulaire */}
-      <div className="flex flex-col justify-center px-8 lg:px-16 xl:px-24 py-12">
-        <div className="flex items-center gap-3 mb-12">
-          <Logo size={36} />
-          <span className="text-xl font-bold text-foreground tracking-tight">
-            ogong
-          </span>
+      <div className="flex flex-col justify-between px-8 lg:px-16 xl:px-24 py-12">
+        <div>
+          <div className="flex items-center gap-3 mb-12">
+            <Logo size={36} />
+            <span className="text-xl font-bold text-foreground tracking-tight">
+              ogong
+            </span>
+          </div>
+          <div className="flex flex-col justify-center flex-1">
+            {children}
+          </div>
         </div>
-        {children}
+        <Footer />
       </div>
 
       {/* Illustration */}

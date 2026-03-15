@@ -3,10 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
+import type { Translations } from "@/lib/i18n";
+import type { ReactNode } from "react";
 
-const navigation = [
+type NavKey = "events" | "statistics" | "credits" | "users" | "account";
+
+interface NavItem {
+  key: NavKey;
+  href: string;
+  icon: ReactNode;
+}
+
+const navItems: NavItem[] = [
   {
-    label: "Événements",
+    key: "events",
     href: "/evenements",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
@@ -15,7 +26,7 @@ const navigation = [
     ),
   },
   {
-    label: "Statistiques",
+    key: "statistics",
     href: "/statistiques",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
@@ -24,7 +35,7 @@ const navigation = [
     ),
   },
   {
-    label: "Crédits",
+    key: "credits",
     href: "/credits",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
@@ -33,7 +44,7 @@ const navigation = [
     ),
   },
   {
-    label: "Utilisateurs",
+    key: "users",
     href: "/utilisateurs",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
@@ -42,7 +53,7 @@ const navigation = [
     ),
   },
   {
-    label: "Mon compte",
+    key: "account",
     href: "/compte",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
@@ -52,8 +63,20 @@ const navigation = [
   },
 ];
 
+function getNavLabel(key: NavKey, t: Translations): string {
+  const labels: Record<NavKey, string> = {
+    events: t.nav.events,
+    statistics: t.nav.statistics,
+    credits: t.nav.credits,
+    users: t.nav.users,
+    account: t.nav.account,
+  };
+  return labels[key];
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const { t } = useLocale();
 
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-64 bg-sidebar flex flex-col z-40">
@@ -62,7 +85,7 @@ export default function Sidebar() {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-primary focus:rounded-lg focus:text-sm focus:font-medium"
       >
-        Aller au contenu
+        {t.nav.skipToContent}
       </a>
 
       {/* Logo */}
@@ -82,13 +105,13 @@ export default function Sidebar() {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
-          Créer un événement
+          {t.nav.createEvent}
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 space-y-1" role="navigation" aria-label="Menu principal">
-        {navigation.map((item) => {
+      <nav className="flex-1 px-3 space-y-1" role="navigation" aria-label={t.nav.mainMenu}>
+        {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
           return (
             <Link
@@ -101,7 +124,7 @@ export default function Sidebar() {
               }`}
             >
               {item.icon}
-              {item.label}
+              {getNavLabel(item.key, t)}
             </Link>
           );
         })}
