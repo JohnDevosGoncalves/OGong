@@ -122,13 +122,24 @@ export async function POST(
     );
   }
 
-  // Si des tours existent déjà, les supprimer pour recalculer
-  if (evenement.tours.length > 0) {
-    await prisma.affectationTable.deleteMany({
-      where: { tour: { evenementId: id } },
-    });
-    await prisma.tour.deleteMany({ where: { evenementId: id } });
-    await prisma.table.deleteMany({ where: { evenementId: id } });
+  // Supprimer les données existantes pour recalculer (ordre : affectations → tours → tables)
+  // On supprime via les deux relations (tour ET table) pour couvrir tous les cas
+  const existingTables = await prisma.table.findMany({ where: { evenementId: id }, select: { id: true } });
+  const existingTours = await prisma.tour.findMany({ where: { evenementId: id }, select: { id: true } });
+  const tableIds = existingTables.map((t) => t.id);
+  const tourIds = existingTours.map((t) => t.id);
+
+  if (tableIds.length > 0 || tourIds.length > 0) {
+    await prisma.$transaction([
+      prisma.affectationTable.deleteMany({
+        where: { OR: [
+          ...(tourIds.length > 0 ? [{ tourId: { in: tourIds } }] : []),
+          ...(tableIds.length > 0 ? [{ tableId: { in: tableIds } }] : []),
+        ] },
+      }),
+      prisma.tour.deleteMany({ where: { evenementId: id } }),
+      prisma.table.deleteMany({ where: { evenementId: id } }),
+    ]);
   }
 
   // Optionnel : nombre de tours limité

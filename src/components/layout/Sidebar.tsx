@@ -145,7 +145,7 @@ export default function Sidebar() {
   const isSuperAdmin = userRole === "super_admin";
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-64 bg-sidebar flex flex-col z-40">
+    <aside className="fixed left-0 top-0 bottom-0 w-64 bg-sidebar border-r border-border flex flex-col z-40">
       {/* Skip link */}
       <a
         href="#main-content"
@@ -156,8 +156,8 @@ export default function Sidebar() {
 
       {/* Logo */}
       <div className="px-6 py-6 flex items-center gap-3">
-        <Logo size={44} animate={animateLogo} />
-        <span className="text-white text-xl font-bold tracking-tight">
+        <Logo size={36} animate={animateLogo} />
+        <span className="text-foreground text-xl font-bold tracking-tight">
           ogong
         </span>
       </div>
@@ -178,7 +178,7 @@ export default function Sidebar() {
       {/* Admin Navigation */}
       {isSuperAdmin && (
         <div className="px-3 mb-2">
-          <p className="px-3 mb-1 text-xs font-semibold uppercase tracking-wider text-white/40">
+          <p className="px-3 mb-1 text-xs font-semibold uppercase tracking-wider text-muted">
             Administration
           </p>
           <div className="space-y-0.5">
@@ -190,8 +190,8 @@ export default function Sidebar() {
                   href={item.href}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive
-                      ? "bg-danger/20 text-white"
-                      : "text-white/60 hover:bg-sidebar-hover hover:text-white"
+                      ? "bg-danger/10 text-danger"
+                      : "text-muted hover:bg-sidebar-hover hover:text-foreground"
                   }`}
                 >
                   {item.icon}
@@ -200,7 +200,7 @@ export default function Sidebar() {
               );
             })}
           </div>
-          <div className="mx-3 my-3 border-t border-white/10" />
+          <div className="mx-3 my-3 border-t border-border" />
         </div>
       )}
 
@@ -214,8 +214,8 @@ export default function Sidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-sidebar-active text-white"
-                  : "text-white/70 hover:bg-sidebar-hover hover:text-white"
+                  ? "bg-sidebar-active text-primary"
+                  : "text-muted hover:bg-sidebar-hover hover:text-foreground"
               }`}
             >
               {item.icon}
@@ -231,8 +231,8 @@ export default function Sidebar() {
           href="/aide"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
             pathname.startsWith("/aide")
-              ? "bg-sidebar-active text-white"
-              : "text-white/70 hover:bg-sidebar-hover hover:text-white"
+              ? "bg-sidebar-active text-primary"
+              : "text-muted hover:bg-sidebar-hover hover:text-foreground"
           }`}
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
@@ -243,8 +243,8 @@ export default function Sidebar() {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-4 border-t border-white/10">
-        <p className="text-white/40 text-xs text-center">OGong v0.1.0</p>
+      <div className="px-4 py-4 border-t border-border">
+        <p className="text-muted/50 text-xs text-center">OGong v0.1.0</p>
       </div>
     </aside>
   );

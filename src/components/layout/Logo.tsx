@@ -103,20 +103,6 @@ export default function Logo({ size = 40, animate = false }: LogoProps) {
         );
       })}
 
-      {/* Central "og" text — static version only */}
-      {!shouldAnimate && (
-        <text
-          x={CENTER}
-          y={CENTER + 3.5}
-          textAnchor="middle"
-          fontSize="9"
-          fontWeight="700"
-          fill="currentColor"
-          fontFamily="system-ui, sans-serif"
-        >
-          og
-        </text>
-      )}
     </svg>
   );
 }
