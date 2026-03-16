@@ -5,7 +5,7 @@
   --foreground: #111827;
   --sidebar: #ffffff;
   --sidebar-hover: #f3f4f6;
-  --sidebar-active: #ede9fe;
+  --sidebar-active: #f3f4f6;
   --primary: #6d5cff;
   --primary-hover: #5b4cee;
   --primary-light: #a78bfa;
@@ -21,11 +21,11 @@
 }
 
 html.dark {
-  --background: #0f172a;
+  --background: #111827;
   --foreground: #f8fafc;
-  --sidebar: #1e1b4b;
-  --sidebar-hover: #312e81;
-  --sidebar-active: #4338ca;
+  --sidebar: #1a1f2e;
+  --sidebar-hover: #252b3b;
+  --sidebar-active: #252b3b;
   --primary: #7c6fff;
   --primary-hover: #6d5de6;
   --primary-light: #a78bfa;
@@ -35,7 +35,7 @@ html.dark {
   --warning: #fbbf24;
   --danger: #f87171;
   --muted: #94a3b8;
-  --border: #334155;
+  --border: #2d3748;
   --surface: #1e293b;
   --surface-hover: #273549;
 }
