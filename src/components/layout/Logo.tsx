@@ -11,10 +11,11 @@ const dots = [
   { color: "#FF8C42", angle: 300 },
 ];
 
-const VIEWBOX = 32;
+/* ViewBox agrandi (48) pour laisser de l'espace à l'overshoot de l'animation */
+const VIEWBOX = 48;
 const CENTER = VIEWBOX / 2;
-const RADIUS = 11;
-const DOT_RADIUS = 2.2;
+const RADIUS = 14;
+const DOT_RADIUS = 2.8;
 
 const EASING: [number, number, number, number] = [0.22, 1, 0.36, 1];
 const DURATION = 1.2;
@@ -22,13 +23,10 @@ const STAGGER = 0.06;
 const INITIAL_DELAY = 0.1;
 
 interface LogoProps {
-  /** Pixel size of the logo */
   size?: number;
-  /** Play gong entrance animation */
   animate?: boolean;
 }
 
-/** Calculates the final (x, y) position for a dot on the circle. */
 function dotPosition(angleDeg: number) {
   const rad = (angleDeg * Math.PI) / 180;
   return {
@@ -53,6 +51,7 @@ export default function Logo({ size = 40, animate = false }: LogoProps) {
       xmlns="http://www.w3.org/2000/svg"
       role="img"
       aria-label="Logo OGong"
+      style={{ overflow: "visible" }}
     >
       {dots.map((dot, i) => {
         const { cx, cy } = dotPosition(dot.angle);
@@ -73,36 +72,27 @@ export default function Logo({ size = 40, animate = false }: LogoProps) {
             animate={{
               cx: [
                 CENTER,
-                cx + (cx - CENTER) * 0.6,
-                cx - (cx - CENTER) * 0.15,
-                cx + (cx - CENTER) * 0.05,
+                cx + (cx - CENTER) * 0.5,
+                cx - (cx - CENTER) * 0.1,
                 cx,
               ],
               cy: [
                 CENTER,
-                cy + (cy - CENTER) * 0.6,
-                cy - (cy - CENTER) * 0.15,
-                cy + (cy - CENTER) * 0.05,
+                cy + (cy - CENTER) * 0.5,
+                cy - (cy - CENTER) * 0.1,
                 cy,
               ],
-              r: [
-                0,
-                DOT_RADIUS * 1.8,
-                DOT_RADIUS * 0.7,
-                DOT_RADIUS * 1.2,
-                DOT_RADIUS,
-              ],
+              r: [0, DOT_RADIUS * 1.5, DOT_RADIUS * 0.8, DOT_RADIUS],
             }}
             transition={{
               duration: DURATION,
               delay: INITIAL_DELAY + i * STAGGER,
               ease: EASING,
-              times: [0, 0.35, 0.55, 0.75, 1],
+              times: [0, 0.4, 0.7, 1],
             }}
           />
         );
       })}
-
     </svg>
   );
 }
