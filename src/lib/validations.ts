@@ -133,3 +133,27 @@ export const buyCreditsSchema = z.object({
     error: "Pack de crédits invalide",
   }),
 });
+
+// ─── Administration ─────────────────────────────────────────
+
+export const updateUserRoleSchema = z.object({
+  userId: z.string().min(1, "Identifiant utilisateur requis"),
+  role: z.enum(["admin", "animateur", "super_admin"], {
+    error: "Rôle invalide. Valeurs possibles : admin, animateur, super_admin",
+  }),
+});
+
+export const grantCreditsSchema = z.object({
+  userId: z.string().min(1, "Identifiant utilisateur requis"),
+  montant: z.number().int().min(1, "Le montant doit être au moins 1").max(1000, "Le montant ne peut dépasser 1000"),
+  detail: z.string().min(1, "La raison est requise").max(500),
+});
+
+export const adminSearchSchema = z.object({
+  search: z.string().optional(),
+  role: z.string().optional(),
+  status: z.string().optional(),
+  format: z.string().optional(),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+});

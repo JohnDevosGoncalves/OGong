@@ -16,6 +16,52 @@ interface NavItem {
   icon: ReactNode;
 }
 
+interface AdminNavItem {
+  label: string;
+  href: string;
+  icon: ReactNode;
+}
+
+const adminNavItems: AdminNavItem[] = [
+  {
+    label: "Dashboard Admin",
+    href: "/admin",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Utilisateurs",
+    href: "/admin/utilisateurs",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Événements",
+    href: "/admin/evenements",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+      </svg>
+    ),
+  },
+  {
+    label: "Revenus",
+    href: "/admin/revenus",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      </svg>
+    ),
+  },
+];
+
 const navItems: NavItem[] = [
   {
     key: "events",
@@ -80,11 +126,23 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { t } = useLocale();
   const [animateLogo, setAnimateLogo] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setAnimateLogo(false), 1500);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    fetch("/api/compte")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.role) setUserRole(data.role);
+      })
+      .catch(() => {});
+  }, []);
+
+  const isSuperAdmin = userRole === "super_admin";
 
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-64 bg-sidebar flex flex-col z-40">
@@ -116,6 +174,35 @@ export default function Sidebar() {
           {t.nav.createEvent}
         </Link>
       </div>
+
+      {/* Admin Navigation */}
+      {isSuperAdmin && (
+        <div className="px-3 mb-2">
+          <p className="px-3 mb-1 text-xs font-semibold uppercase tracking-wider text-white/40">
+            Administration
+          </p>
+          <div className="space-y-0.5">
+            {adminNavItems.map((item) => {
+              const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-danger/20 text-white"
+                      : "text-white/60 hover:bg-sidebar-hover hover:text-white"
+                  }`}
+                >
+                  {item.icon}
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+          <div className="mx-3 my-3 border-t border-white/10" />
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 px-3 space-y-1" role="navigation" aria-label={t.nav.mainMenu}>

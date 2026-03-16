@@ -35,6 +35,11 @@ export const en: Translations = {
     help: "Help",
     skipToContent: "Skip to content",
     mainMenu: "Main menu",
+    admin: "Administration",
+    adminDashboard: "Admin Dashboard",
+    adminUsers: "Users",
+    adminEvents: "Events",
+    adminRevenue: "Revenue",
   },
   events: {
     title: "My events",

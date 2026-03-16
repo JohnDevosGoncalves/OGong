@@ -33,6 +33,11 @@ export const fr = {
     help: "Aide",
     skipToContent: "Aller au contenu",
     mainMenu: "Menu principal",
+    admin: "Administration",
+    adminDashboard: "Dashboard Admin",
+    adminUsers: "Utilisateurs",
+    adminEvents: "\u00c9v\u00e9nements",
+    adminRevenue: "Revenus",
   },
   events: {
     title: "Mes \u00e9v\u00e9nements",

@@ -40,6 +40,17 @@ export async function getEventAccess(eventId: string, userId: string) {
   return { evenement: null as null, role: null as null, error: NextResponse.json({ error: "Non autorisé" }, { status: 403 }) };
 }
 
+export async function requireSuperAdmin() {
+  const { userId, error } = await getAuthSession();
+  if (error) return { userId: null as null, error };
+
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  if (!user || user.role !== "super_admin") {
+    return { userId: null as null, error: NextResponse.json({ error: "Accès réservé au super administrateur" }, { status: 403 }) };
+  }
+  return { userId, error: null as null };
+}
+
 export function sanitize(str: string): string {
   return str.trim().replace(/<[^>]*>/g, "").slice(0, 500);
 }
